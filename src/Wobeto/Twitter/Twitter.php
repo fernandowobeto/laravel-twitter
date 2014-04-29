@@ -40,7 +40,7 @@ class Twitter{
 			throw new Exception('É preciso instalar o cURL, veja em: http://curl.haxx.se/docs/install.html');
 		}
 		
-		$settings = Config::get('twitter.auth');
+		$settings = \Config::get('twitter.auth');
 
 		if(count(array_intersect_key(array_flip($this->settings),$settings))!=count($this->settings)){
 			throw new Exception('Tenha certeza que definiu corretamente os parâmetros');
