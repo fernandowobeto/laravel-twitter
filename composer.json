@@ -1,0 +1,20 @@
+{
+    "name": "wobeto/twitter",
+    "description": "",
+    "authors": [
+        {
+            "name": "Fernando Wobeto",
+            "email": "fernandowobeto@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0",
+        "illuminate/support": "4.1.*"
+    },
+    "autoload": {
+        "psr-0": {
+            "Wobeto\\Twitter\\": "src/"
+        }
+    },
+    "minimum-stability": "stable"
+}
