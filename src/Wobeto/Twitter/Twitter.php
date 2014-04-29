@@ -26,6 +26,8 @@ class Twitter{
 	protected $oauth;
 	public $url;
 	private $settings = array('oauth_access_token','oauth_access_token_secret','consumer_key','consumer_secret');
+	
+	private $path_request = 'https://api.twitter.com/1.1/statuses/user_timeline.json';
 
 	/**
 	 * Create the API access object. Requires an array of settings::
@@ -62,6 +64,11 @@ class Twitter{
 		if(count($data)){
 			$this->getdata = $data;
 		}
+		return $this;
+	}
+	
+	public function total($total){
+		$this->getdata['count'] = $total;
 		return $this;
 	}
 
@@ -117,7 +124,9 @@ class Twitter{
 	 * 
 	 * @return string json If $return param is true, returns json data.
 	 */
-	public function performRequest($json = false){
+	public function request($json = false){		
+		$this->buildOauth($this->path_request,'GET');
+		
 		$header = array($this->buildAuthorizationHeader($this->oauth),'Expect:');
 
 		$options = array(
