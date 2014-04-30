@@ -35,7 +35,6 @@ class Twitter{
 	 * These are all available by creating your own application on dev.twitter.com
 	 * Requires the cURL library
 	 * 
-	 * @param array $settings
 	 */
 	public function __construct(){
 		if(!in_array('curl',get_loaded_extensions())){
@@ -54,11 +53,9 @@ class Twitter{
 	}
 
 	/**
-	 * Set getfield string, example: '?screen_name=J7mbo'
+	 * @param Array $data Get key and value pairs
 	 * 
-	 * @param string $string Get key and value pairs as string
-	 * 
-	 * @return \TwitterAPIExchange Instance of self for method chaining
+	 * @return \Twitter Instance of self for method chaining
 	 */
 	public function setData(Array $data){
 		if(count($data)){
@@ -91,7 +88,7 @@ class Twitter{
 	 * 
 	 * @param string $url The API url to use. Example: https://api.twitter.com/1.1/search/tweets.json
 	 * @param string $requestMethod Either POST or GET
-	 * @return \TwitterAPIExchange Instance of self for method chaining
+	 * @return \Twitter Instance of self for method chaining
 	 */
 	public function buildOauth($url,$requestMethod){
 		$requestMethod = strtoupper($requestMethod);
@@ -196,7 +193,6 @@ class Twitter{
 		foreach($params as $key=> $value){
 			$return[] = "$key=".$value;
 		}
-
 		return $method."&".rawurlencode($baseURI).'&'.rawurlencode(implode('&',$return));
 	}
 
