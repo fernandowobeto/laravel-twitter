@@ -1,11 +1,14 @@
 <?php
 
-namespace Wobeto\Twitter;
-
 /**
  * @author   Fernando Wobeto <fernandowobeto@gmail.com>
  * @license  MIT License
  */
+
+namespace Wobeto\Twitter;
+
+use \Config;
+
 class Twitter{
 
 	private $oauth_access_token;
@@ -20,11 +23,12 @@ class Twitter{
 	
 	public $url;
 	private $settings = array('oauth_access_token','oauth_access_token_secret','consumer_key','consumer_secret');
-	
-	private $path_request			= 'https://api.twitter.com/1.1/statuses/user_timeline.json';
-	private $path_post_message		= 'https://api.twitter.com/1.1/statuses/update.json';
-	private $path_delete_message	= 'https://api.twitter.com/1.1/statuses/destroy/%d.json';
-
+		
+	private $paths = array(
+		 'request'=>'https://api.twitter.com/1.1/statuses/user_timeline.json',
+		 'post_message'=>'https://api.twitter.com/1.1/statuses/update.json',
+		 'delete_message'=>'https://api.twitter.com/1.1/statuses/destroy/%d.json'
+	);
 	/**
 	 * Create the API access object. Requires an array of settings::
 	 * oauth access token, oauth access token secret, consumer key, consumer secret
@@ -38,7 +42,7 @@ class Twitter{
 			throw new Exception('É preciso instalar o cURL, veja em: http://curl.haxx.se/docs/install.html');
 		}
 		
-		$settings = \Config::get('twitter.auth');
+		$settings = Config::get('twitter.auth');
 
 		if(count(array_intersect_key(array_flip($this->settings),$settings))!=count($this->settings)){
 			throw new Exception('Tenha certeza que definiu corretamente os parâmetros');
@@ -130,17 +134,17 @@ class Twitter{
 	 * @return string json If $return param is true, returns json data.
 	 */
 	public function request(){		
-		$this->buildOauth($this->path_request,'GET');		
+		$this->buildOauth($this->paths['request'],'GET');		
 		return $this->make();
 	}
 	
 	public function post(){
-		$this->buildOauth($this->path_post_message,'POST');
+		$this->buildOauth($this->paths['post_message'],'POST');
 		return $this->make();
 	}
 	
 	public function delete($id){
-		$this->buildOauth(sprintf($this->path_delete_message,$id),'POST');
+		$this->buildOauth(sprintf($this->paths['delete_message'],$id),'POST');
 		return $this->make();
 	}
 	
