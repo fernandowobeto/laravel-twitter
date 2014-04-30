@@ -3,15 +3,8 @@
 namespace Wobeto\Twitter;
 
 /**
- * Twitter-API-PHP : Simple PHP wrapper for the v1.1 API
- * 
- * PHP version 5.3.10
- * 
- * @category Awesomeness
- * @package  Twitter-API-PHP
- * @author   James Mallison <me@j7mbo.co.uk>
+ * @author   Fernando Wobeto <fernandowobeto@gmail.com>
  * @license  MIT License
- * @link     http://github.com/j7mbo/twitter-api-php
  */
 class Twitter{
 
@@ -19,15 +12,18 @@ class Twitter{
 	private $oauth_access_token_secret;
 	private $consumer_key;
 	private $consumer_secret;
-	private $postfields;
-	private $getfield;
+	
+	protected $oauth;
+	
 	private $getdata = array();
 	private $requestmethod;
-	protected $oauth;
+	
 	public $url;
 	private $settings = array('oauth_access_token','oauth_access_token_secret','consumer_key','consumer_secret');
 	
-	private $path_request = 'https://api.twitter.com/1.1/statuses/user_timeline.json';
+	private $path_request			= 'https://api.twitter.com/1.1/statuses/user_timeline.json';
+	private $path_post_message		= 'https://api.twitter.com/1.1/statuses/update.json';
+	private $path_delete_message	= 'https://api.twitter.com/1.1/statuses/destroy/%d.json';
 
 	/**
 	 * Create the API access object. Requires an array of settings::
@@ -67,8 +63,17 @@ class Twitter{
 		return $this;
 	}
 	
+	private function resetData(){
+		$this->getdata = array();
+	}
+	
 	public function total($total){
 		$this->getdata['count'] = $total;
+		return $this;
+	}
+	
+	public function message($message){
+		$this->getdata['status'] = $message;
 		return $this;
 	}
 
@@ -124,9 +129,22 @@ class Twitter{
 	 * 
 	 * @return string json If $return param is true, returns json data.
 	 */
-	public function request($json = false){		
-		$this->buildOauth($this->path_request,'GET');
-		
+	public function request(){		
+		$this->buildOauth($this->path_request,'GET');		
+		return $this->make();
+	}
+	
+	public function post(){
+		$this->buildOauth($this->path_post_message,'POST');
+		return $this->make();
+	}
+	
+	public function delete($id){
+		$this->buildOauth(sprintf($this->path_delete_message,$id),'POST');
+		return $this->make();
+	}
+	
+	private function make(){
 		$header = array($this->buildAuthorizationHeader($this->oauth),'Expect:');
 
 		$options = array(
@@ -141,22 +159,21 @@ class Twitter{
 			switch($this->requestmethod){
 				case 'POST':
 					$options[CURLOPT_POSTFIELDS] = $this->getData();
-					break;
+				break;
 				case 'GET':
 					$options[CURLOPT_URL] .= '?'.http_build_query($this->getData());
-					break;
+				break;
 			}
 		}
+		
+		$this->resetData();
 
 		$feed = curl_init();
 		curl_setopt_array($feed,$options);
 		$json = curl_exec($feed);
 		curl_close($feed);
 
-		if($json===true){
-			return $json;
-		}
-		return json_decode($json);
+		return json_decode($json);		
 	}
 
 	/**
