@@ -21,13 +21,14 @@ class Twitter{
 	private $getdata = array();
 	private $requestmethod;
 	
-	public $url;
+	private $url;
 	private $settings = array('oauth_access_token','oauth_access_token_secret','consumer_key','consumer_secret');
 		
 	private $paths = array(
 		 'request'=>'https://api.twitter.com/1.1/statuses/user_timeline.json',
 		 'post_message'=>'https://api.twitter.com/1.1/statuses/update.json',
-		 'delete_message'=>'https://api.twitter.com/1.1/statuses/destroy/%d.json'
+		 'delete_message'=>'https://api.twitter.com/1.1/statuses/destroy/%d.json',
+		 'profile'=>'https://api.twitter.com/1.1/account/verify_credentials.json'
 	);
 	/**
 	 * Create the API access object. Requires an array of settings::
@@ -51,36 +52,70 @@ class Twitter{
 			$this->$setting = $value;
 		}
 	}
-
+	
 	/**
-	 * @param Array $data Get key and value pairs
+	 * Perform the actual data retrieval from the API
 	 * 
-	 * @return \Twitter Instance of self for method chaining
+	 * @param boolean $return If true, returns data.
+	 * 
+	 * @return string json If $return param is true, returns json data.
 	 */
-	public function setData(Array $data){
-		if(count($data)){
-			$this->getdata = $data;
-		}
-		return $this;
+	public function all($total = NULL){
+		if(is_numeric($total)):
+			$this->setData('count',$total);
+		endif;		
+		$this->buildOauth($this->paths['request'],'GET');		
+		return $this->make();
 	}
 	
-	private function resetData(){
-		$this->getdata = array();
+	public function post($message){
+		$this->setData('status',$message);		
+		$this->buildOauth($this->paths['post_message'],'POST');
+		return $this->make();
 	}
 	
-	public function total($total){
-		$this->getdata['count'] = $total;
-		return $this;
-	}
+	public function profile(){		
+		$this->buildOauth($this->paths['profile'],'GET');
+		return $this->make();
+	}	
 	
-	public function message($message){
-		$this->getdata['status'] = $message;
-		return $this;
-	}
+	public function delete($id){		
+		$this->setData('id',$id);
+		$this->buildOauth(sprintf($this->paths['delete_message'],$id),'POST');
+		return $this->make();
+	}	
+	
+	private function make(){
+		$header = array($this->buildAuthorizationHeader($this->oauth),'Expect:');
 
-	public function getData(){
-		return $this->getdata;
-	}
+		$options = array(
+			 CURLOPT_HTTPHEADER=>$header,
+			 CURLOPT_HEADER=>false,
+			 CURLOPT_URL=>$this->url,
+			 CURLOPT_RETURNTRANSFER=>true,
+			 CURLOPT_TIMEOUT=>10
+		);
+
+		if(count($this->getData())){
+			switch($this->requestmethod){
+				case 'POST':
+					$options[CURLOPT_POSTFIELDS] = $this->getData();
+				break;
+				case 'GET':
+					$options[CURLOPT_URL] .= '?'.http_build_query($this->getData());
+				break;
+			}
+		}
+		
+		$this->resetData();
+
+		$feed = curl_init();
+		curl_setopt_array($feed,$options);
+		$json = curl_exec($feed);
+		curl_close($feed);
+
+		return json_decode($json);		
+	}	
 
 	/**
 	 * Build the Oauth object using params set in construct and additionals
@@ -124,60 +159,6 @@ class Twitter{
 	}
 
 	/**
-	 * Perform the actual data retrieval from the API
-	 * 
-	 * @param boolean $return If true, returns data.
-	 * 
-	 * @return string json If $return param is true, returns json data.
-	 */
-	public function request(){		
-		$this->buildOauth($this->paths['request'],'GET');		
-		return $this->make();
-	}
-	
-	public function post(){
-		$this->buildOauth($this->paths['post_message'],'POST');
-		return $this->make();
-	}
-	
-	public function delete($id){
-		$this->buildOauth(sprintf($this->paths['delete_message'],$id),'POST');
-		return $this->make();
-	}
-	
-	private function make(){
-		$header = array($this->buildAuthorizationHeader($this->oauth),'Expect:');
-
-		$options = array(
-			 CURLOPT_HTTPHEADER=>$header,
-			 CURLOPT_HEADER=>false,
-			 CURLOPT_URL=>$this->url,
-			 CURLOPT_RETURNTRANSFER=>true,
-			 CURLOPT_TIMEOUT=>10
-		);
-
-		if(count($this->getData())){
-			switch($this->requestmethod){
-				case 'POST':
-					$options[CURLOPT_POSTFIELDS] = $this->getData();
-				break;
-				case 'GET':
-					$options[CURLOPT_URL] .= '?'.http_build_query($this->getData());
-				break;
-			}
-		}
-		
-		$this->resetData();
-
-		$feed = curl_init();
-		curl_setopt_array($feed,$options);
-		$json = curl_exec($feed);
-		curl_close($feed);
-
-		return json_decode($json);		
-	}
-
-	/**
 	 * Private method to generate the base string used by cURL
 	 * 
 	 * @param string $baseURI
@@ -214,5 +195,20 @@ class Twitter{
 		$return .= implode(', ',$values);
 		return $return;
 	}
+	
+	private function setData($key,$value = NULL){
+		if(!is_array($key)):
+			$key = array($key=>$value);
+		endif;
+		$this->getdata = $key;
+	}
+	
+	private function getData(){
+		return $this->getdata;
+	}
+	
+	private function resetData(){
+		$this->getdata = array();
+	}	
 
 }
