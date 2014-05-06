@@ -1,7 +1,7 @@
 laravel-twitter
 ===============
 
-Laravel 4 Service Provider to interact with twitter account, like return a collection of the most recent Tweets posted by the user, post Tweets and delete.
+Laravel 4 Service Provider to interact with twitter account, like return a collection of the most recent Tweets posted by the user, post Tweets, delete status and get user profile.
 
 ## Installation
 
