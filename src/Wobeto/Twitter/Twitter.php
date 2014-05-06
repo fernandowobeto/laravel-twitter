@@ -23,12 +23,31 @@ class Twitter{
 	
 	private $url;
 	private $settings = array('oauth_access_token','oauth_access_token_secret','consumer_key','consumer_secret');
-		
-	private $paths = array(
-		 'request'=>'https://api.twitter.com/1.1/statuses/user_timeline.json',
-		 'post_message'=>'https://api.twitter.com/1.1/statuses/update.json',
-		 'delete_message'=>'https://api.twitter.com/1.1/statuses/destroy/%d.json',
-		 'profile'=>'https://api.twitter.com/1.1/account/verify_credentials.json'
+	
+	private $api_url = 'https://api.twitter.com';
+	private $api_version = '1.1';
+	
+	private $resources = array(
+		'request'=>array(
+			 'resource'=>'statuses/user_timeline.json',
+			 'method'=>'GET'
+		),
+		 'post_message'=>array(
+			  'resource'=>'statuses/update.json',
+			  'method'=>'POST'
+		 ),
+		 'delete_message'=>array(
+			  'resource'=>'statuses/destroy/%d.json',
+			  'method'=>'POST'
+		 ),
+		 'profile'=>array(
+			  'resource'=>'account/verify_credentials.json',
+			  'method'=>'GET'
+		 ),
+		 'followers_list'=>array(
+			  'resource'=>'followers/list.json',
+			  'method'=>'GET'
+		 )
 	);
 	/**
 	 * Create the API access object. Requires an array of settings::
@@ -64,26 +83,34 @@ class Twitter{
 		if(is_numeric($total)):
 			$this->setData('count',$total);
 		endif;		
-		$this->buildOauth($this->paths['request'],'GET');		
-		return $this->make();
+		return $this->prepare('request')->make();
 	}
 	
 	public function post($message){
-		$this->setData('status',$message);		
-		$this->buildOauth($this->paths['post_message'],'POST');
-		return $this->make();
+		return $this->setData('status',$message)->prepare('post_message')->make();	
 	}
 	
 	public function profile(){		
-		$this->buildOauth($this->paths['profile'],'GET');
-		return $this->make();
+		return $this->prepare('profile')->make();
 	}	
 	
 	public function delete($id){		
-		$this->setData('id',$id);
-		$this->buildOauth(sprintf($this->paths['delete_message'],$id),'POST');
-		return $this->make();
+		return $this->setData('id',$id)->prepare('delete_message',$id)->make();
 	}	
+	
+	public function getFollowers(){
+		return $this->prepare('followers_list')->make();
+	}
+	
+	private function prepare($resource,$additional = NULL){
+		$resource = $this->resources[$resource];
+		$path = sprintf('%s/%s/%s',$this->api_url,$this->api_version,$resource['resource']);
+		if(!is_null($additional)):
+			$path = sprintf($path,$additional);
+		endif;
+		$this->buildOauth($path,$resource['method']);
+		return $this;
+	}
 	
 	private function make(){
 		$header = array($this->buildAuthorizationHeader($this->oauth),'Expect:');
@@ -201,6 +228,7 @@ class Twitter{
 			$key = array($key=>$value);
 		endif;
 		$this->getdata = $key;
+		return $this;
 	}
 	
 	private function getData(){
