@@ -1,7 +1,7 @@
 laravel-twitter
 ===============
 
-Laravel 4 Service Provider to interact with twitter account, like return a collection of the most recent Tweets posted by user, post Tweets, delete tweets and get user profile.
+Laravel 4 Service Provider to interact with twitter account, like return a collection of the most recent Tweets posted by user, post Tweets, delete and get user profile.
 
 [![Latest Stable Version](https://poser.pugx.org/wobeto/twitter/v/stable.svg)](https://packagist.org/packages/wobeto/twitter) [![Total Downloads](https://poser.pugx.org/wobeto/twitter/downloads.svg)](https://packagist.org/packages/wobeto/twitter) [![Latest Unstable Version](https://poser.pugx.org/wobeto/twitter/v/unstable.svg)](https://packagist.org/packages/wobeto/twitter) [![License](https://poser.pugx.org/wobeto/twitter/license.svg)](https://packagist.org/packages/wobeto/twitter) [![Code Climate](https://codeclimate.com/github/fernandowobeto/laravel-twitter/badges/gpa.svg)](https://codeclimate.com/github/fernandowobeto/laravel-twitter)
 
