@@ -15,18 +15,18 @@ class Twitter{
 	private $oauth_access_token_secret;
 	private $consumer_key;
 	private $consumer_secret;
-	
+
 	protected $oauth;
-	
+
 	private $getdata = array();
 	private $requestmethod;
-	
+
 	private $url;
 	private $settings = array('oauth_access_token','oauth_access_token_secret','consumer_key','consumer_secret');
-	
+
 	private $api_url = 'https://api.twitter.com';
 	private $api_version = '1.1';
-	
+
 	private $resources = array(
 		'request'=>array(
 			 'resource'=>'statuses/user_timeline.json',
@@ -47,61 +47,93 @@ class Twitter{
 		 'followers_list'=>array(
 			  'resource'=>'followers/list.json',
 			  'method'=>'GET'
-		 )
+		 ),
+		'favorites'=>array(
+			'resource'=>'favorites/list.json',
+			'method'=>'GET'
+		)
 	);
 	/**
 	 * Create the API access object. Requires an array of settings::
 	 * oauth access token, oauth access token secret, consumer key, consumer secret
 	 * These are all available by creating your own application on dev.twitter.com
 	 * Requires the cURL library
-	 * 
+	 *
 	 */
 	public function __construct(){
 		if(!in_array('curl',get_loaded_extensions())){
 			throw new Exception('É preciso instalar o cURL, veja em: http://curl.haxx.se/docs/install.html');
 		}
-		
+
 		$settings = Config::get('twitter.auth');
 
 		if(count(array_intersect_key(array_flip($this->settings),$settings))!=count($this->settings)){
 			throw new Exception('Tenha certeza que definiu corretamente os parâmetros');
 		}
-		
+
 		foreach($settings AS $setting=> $value){
 			$this->$setting = $value;
 		}
 	}
-	
 	/**
-	 * Perform the actual data retrieval from the API
-	 * 
-	 * @param boolean $return If true, returns data.
-	 * 
-	 * @return string json If $return param is true, returns json data.
+	 * Returns a collection of the most recent Tweets posted by the authenticating user.
+	 *
+	 * @param 		integer $total
+	 * @return    array
+	 * @author 		Fernando Wobeto
 	 */
 	public function all($total = NULL){
 		if(is_numeric($total)):
 			$this->setData('count',$total);
-		endif;		
+		endif;
 		return $this->prepare('request')->make();
 	}
-	
+	/**
+	 * Updates the authenticating user's current status, also known as tweeting.
+	 *
+	 * @param  	  string $message
+	 * @return    void
+	 * @author    Fernando Wobeto
+	 */
 	public function post($message){
-		return $this->setData('status',$message)->prepare('post_message')->make();	
+		return $this->setData('status',$message)->prepare('post_message')->make();
 	}
-	
-	public function profile(){		
+
+	public function profile(){
 		return $this->prepare('profile')->make();
-	}	
-	
-	public function delete($id){		
+	}
+	/**
+	 * Destroys the status specified by the required ID parameter.
+	 * The authenticating user must be the author of the specified status.
+	 * Returns the destroyed status if successful
+	 *
+	 * @param     integer $id
+	 * @return    void
+	 * @author    Fernando Wobeto
+	 */
+	public function delete($id){
 		return $this->setData('id',$id)->prepare('delete_message',$id)->make();
-	}	
-	
+	}
+	/**
+	 * Returns a cursored collection of user objects for users following the specified user.
+	 * At this time, results are ordered with the most recent following first.
+	 *
+	 * @return    array
+	 * @author    Fernando Wobeto
+	 */
 	public function getFollowers(){
 		return $this->prepare('followers_list')->make();
 	}
-	
+	/**
+	 * Returns the 20 most recent Tweets favorited by the authenticating user
+	 *
+	 * @return    array
+	 * @author	  Fernando Wobeto
+	 */
+	public function getFavorites(){
+		return $this->prepare('favorites')->make();
+	}
+
 	private function prepare($resource,$additional = NULL){
 		$resource = $this->resources[$resource];
 		$path = sprintf('%s/%s/%s',$this->api_url,$this->api_version,$resource['resource']);
@@ -111,7 +143,7 @@ class Twitter{
 		$this->buildOauth($path,$resource['method']);
 		return $this;
 	}
-	
+
 	private function make(){
 		$header = array($this->buildAuthorizationHeader($this->oauth),'Expect:');
 
@@ -133,7 +165,7 @@ class Twitter{
 				break;
 			}
 		}
-		
+
 		$this->resetData();
 
 		$feed = curl_init();
@@ -141,13 +173,13 @@ class Twitter{
 		$json = curl_exec($feed);
 		curl_close($feed);
 
-		return json_decode($json);		
-	}	
+		return json_decode($json);
+	}
 
 	/**
 	 * Build the Oauth object using params set in construct and additionals
 	 * passed to this method. For v1.1, see: https://dev.twitter.com/docs/api/1.1
-	 * 
+	 *
 	 * @param string $url The API url to use. Example: https://api.twitter.com/1.1/search/tweets.json
 	 * @param string $requestMethod Either POST or GET
 	 * @return \Twitter Instance of self for method chaining
@@ -187,11 +219,11 @@ class Twitter{
 
 	/**
 	 * Private method to generate the base string used by cURL
-	 * 
+	 *
 	 * @param string $baseURI
 	 * @param string $method
 	 * @param array $params
-	 * 
+	 *
 	 * @return string Built base string
 	 */
 	private function buildBaseString($baseURI,$method,$params){
@@ -206,9 +238,9 @@ class Twitter{
 
 	/**
 	 * Private method to generate authorization header used by cURL
-	 * 
+	 *
 	 * @param array $oauth Array of oauth data generated by buildOauth()
-	 * 
+	 *
 	 * @return string $return Header used by cURL for request
 	 */
 	private function buildAuthorizationHeader($oauth){
@@ -222,7 +254,12 @@ class Twitter{
 		$return .= implode(', ',$values);
 		return $return;
 	}
-	
+	/**
+	* Private method to set data to send
+	*
+	* @return    \Twitter Instance of self for method chaining
+	* @author    Fernando Wobeto
+	*/
 	private function setData($key,$value = NULL){
 		if(!is_array($key)):
 			$key = array($key=>$value);
@@ -230,13 +267,23 @@ class Twitter{
 		$this->getdata = $key;
 		return $this;
 	}
-	
+	/**
+	 * Private method to get data
+	 *
+	 * @return    array
+	 * @author    Fernando Wobeto
+	 */
 	private function getData(){
 		return $this->getdata;
 	}
-	
+	/**
+	 * Private method to reset data definitions
+	 *
+	 * @return    void
+	 * @author    Fernando Wobeto
+	 */
 	private function resetData(){
 		$this->getdata = array();
-	}	
+	}
 
 }
