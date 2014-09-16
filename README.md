@@ -12,7 +12,7 @@ Add wobeto/twitter to your composer.json file:
 
 ```
 "require": {
-  "wobeto/twitter": "0.5.0"
+  "wobeto/twitter": "0.6.1"
 }
 ```
 
